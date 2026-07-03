@@ -1,0 +1,18 @@
+============================================================
+Data Validation Framework — pre/post integrity checks
+============================================================
+
+Using live sample emp_nos from employee_sandbox: 10001, 10003
+
+Case 1: valid name-only update on emp_no=10001 (should succeed)
+  [LOG] emp_no=10001: first_name 'Georgi' -> 'Christian'
+  SUCCESS: 10001 is now 'Christian', gender unchanged (M)
+
+Case 2: update that also corrupts gender on emp_no=10003 (should be blocked + rolled back)
+  BLOCKED: Gender cannot be modified (emp_no=10003): M -> F. Rolled back.
+  Verified post-rollback state: emp_no=10003, first_name='Parto', gender='M'
+
+Consistency check (pre_update snapshot vs. current employee_sandbox):
+  old_count=1000, new_count=464, delta=536
+
+Done.
