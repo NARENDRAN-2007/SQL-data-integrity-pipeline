@@ -1,13 +1,3 @@
-"""
-Task 4 — Data Validation Framework
-Pre/Post Change Checks (real implementation of the brief's pseudocode)
-------------------------------------------------------------------
-Demonstrates: an update wrapped in pre-check -> execute -> post-check
--> rollback-on-violation logic, using employee_sandbox in the
-employees database. Detects and blocks any attempt to change an
-"immutable" attribute (gender) as part of what should have been a
-name-only update.
-"""
 
 import pymysql
 import sys
@@ -39,20 +29,13 @@ def log_change(old_record, new_record):
 
 
 def update_employee_name(conn, emp_no, new_name, simulate_gender_corruption=False):
-    """
-    Updates an employee's first name with pre/post-validation.
-    If simulate_gender_corruption=True, deliberately corrupts gender
-    in the same statement to demonstrate the integrity check catching
-    an unintended side effect (the kind of bug this pattern exists to
-    catch in a real update statement gone wrong).
-    """
+
     with conn.cursor() as cursor:
-        # --- Pre-check ---
+
         old_record = fetch_employee(cursor, emp_no)
         if old_record is None:
             raise ValueError(f"emp_no {emp_no} not found")
 
-        # --- Execute update ---
         if simulate_gender_corruption:
             flipped_gender = 'F' if old_record['gender'] == 'M' else 'M'
             cursor.execute(
@@ -64,8 +47,6 @@ def update_employee_name(conn, emp_no, new_name, simulate_gender_corruption=Fals
                 "UPDATE employee_sandbox SET first_name = %s WHERE emp_no = %s",
                 (new_name, emp_no)
             )
-
-        # --- Post-validation ---
         new_record = fetch_employee(cursor, emp_no)
 
         if old_record['gender'] != new_record['gender']:
@@ -81,7 +62,7 @@ def update_employee_name(conn, emp_no, new_name, simulate_gender_corruption=Fals
 
 
 def consistency_check(conn):
-    """Row-count delta check against the pre_update snapshot table."""
+    
     with conn.cursor() as cursor:
         cursor.execute("""
             SELECT
@@ -110,7 +91,7 @@ if __name__ == '__main__':
     emp_a, emp_b = get_sample_emp_nos(conn, 2)
     print(f"\nUsing live sample emp_nos from employee_sandbox: {emp_a}, {emp_b}")
 
-    # --- Case 1: normal, valid update ---
+    
     print(f"\nCase 1: valid name-only update on emp_no={emp_a} (should succeed)")
     try:
         result = update_employee_name(conn, emp_no=emp_a, new_name='Christian')
@@ -119,7 +100,6 @@ if __name__ == '__main__':
     except IntegrityError as e:
         print(f"  BLOCKED: {e}")
 
-    # --- Case 2: update that corrupts an immutable field ---
     print(f"\nCase 2: update that also corrupts gender on emp_no={emp_b} "
           f"(should be blocked + rolled back)")
     try:
@@ -129,13 +109,11 @@ if __name__ == '__main__':
     except IntegrityError as e:
         print(f"  BLOCKED: {e}")
 
-        # Verify the rollback actually held
         with conn.cursor() as cursor:
             row = fetch_employee(cursor, emp_b)
             print(f"  Verified post-rollback state: emp_no={row['emp_no']}, "
                   f"first_name='{row['first_name']}', gender='{row['gender']}'")
 
-    # --- Consistency snapshot check ---
     print("\nConsistency check (pre_update snapshot vs. current employee_sandbox):")
     delta = consistency_check(conn)
     print(f"  old_count={delta['old_count']}, new_count={delta['new_count']}, "
