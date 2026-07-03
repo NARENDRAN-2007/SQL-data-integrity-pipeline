@@ -1,13 +1,4 @@
--- ============================================================
--- Task 4: Data Modification & Integrity — Complete Walkthrough
--- Dataset: Employees Sample Database (MySQL/MariaDB)
--- ============================================================
 
-USE employees;
-
--- ------------------------------------------------------------
--- SETUP: Sandbox tables (never touch production tables directly)
--- ------------------------------------------------------------
 DROP TABLE IF EXISTS employee_sandbox;
 DROP TABLE IF EXISTS salary_sandbox;
 DROP TABLE IF EXISTS deletion_audit;
@@ -22,9 +13,6 @@ SELECT '--- Sandbox created ---' AS step;
 SELECT COUNT(*) AS sandbox_row_count FROM employee_sandbox;
 
 
--- ============================================================
--- 1. INSERT: Add new employees
--- ============================================================
 SELECT '--- 1. INSERT ---' AS step;
 
 -- Single record
@@ -42,9 +30,6 @@ INSERT INTO employee_sandbox VALUES
 SELECT * FROM employee_sandbox WHERE emp_no >= 500000;
 
 
--- ============================================================
--- 2. UPDATE: Modify existing records
--- ============================================================
 SELECT '--- 2. UPDATE ---' AS step;
 
 -- Correct name spelling
@@ -61,9 +46,6 @@ WHERE first_name = 'Georgi' AND last_name = 'Facello';
 SELECT * FROM employee_sandbox WHERE first_name IN ('Amelia', 'Georgi');
 
 
--- ============================================================
--- 3. DELETE: Remove records
--- ============================================================
 SELECT '--- 3. DELETE ---' AS step;
 
 DELETE FROM employee_sandbox
@@ -76,9 +58,7 @@ FROM employee_sandbox
 WHERE hire_date = '2023-06-01' AND emp_no > 500000;
 
 
--- ============================================================
--- 4. CONSTRAINT ENFORCEMENT
--- ============================================================
+
 SELECT '--- 4a. Primary Key violation (expected to fail) ---' AS step;
 
 -- Attempt duplicate employee number -- this WILL raise an error;
@@ -102,9 +82,6 @@ FOREIGN KEY (emp_no) REFERENCES employee_sandbox(emp_no);
 -- Uncomment to see: ERROR 1452: Cannot add or update a child row: a foreign key constraint fails
 
 
--- ============================================================
--- 5. TRANSACTION CONTROL
--- ============================================================
 SELECT '--- 5a. Atomic update + ROLLBACK ---' AS step;
 
 START TRANSACTION;
@@ -155,10 +132,6 @@ COMMIT;  -- only the hire_date update is persisted
 
 SELECT hire_date FROM employee_sandbox WHERE emp_no = 10003;
 
-
--- ============================================================
--- 6. DATA VALIDATION FRAMEWORK
--- ============================================================
 SELECT '--- 6. Consistency snapshot ---' AS step;
 
 CREATE TABLE pre_update AS SELECT * FROM employee_sandbox;
@@ -172,9 +145,7 @@ SELECT
     (SELECT COUNT(*) FROM pre_update) - (SELECT COUNT(*) FROM employee_sandbox) AS delta;
 
 
--- ============================================================
--- 7. CONSTRAINT MANAGEMENT
--- ============================================================
+
 SELECT '--- 7a. Adding a UNIQUE constraint ---' AS step;
 
 ALTER TABLE employee_sandbox ADD COLUMN email VARCHAR(255);
@@ -196,10 +167,6 @@ ON DELETE CASCADE;
 
 SELECT 'FK re-added with ON DELETE CASCADE' AS result;
 
-
--- ============================================================
--- 8. REAL-WORLD SCENARIOS
--- ============================================================
 SELECT '--- 8a. Scenario: Department consolidation ---' AS step;
 
 START TRANSACTION;
